@@ -1,20 +1,27 @@
 import {
   BadRequestException,
   ConflictException,
+  GoneException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 import { DELAI_PAIEMENT_MINUTES, PLACES_SEANCE_SQL } from '../catalogue/disponibilite.service';
 import { MAINTENANT_SQL } from '../common/temps';
+import { PaiementService } from '../paiement/paiement.service';
 import { CreerReservationDto } from './dto/creer-reservation.dto';
+import { PayerReservationDto } from './dto/payer-reservation.dto';
 
 /** Code PostgreSQL d'une violation de contrainte d'unicité. */
 const VIOLATION_UNICITE = '23505';
 
 @Injectable()
 export class ReservationsService {
-  constructor(private readonly db: DataSource) {}
+  constructor(
+    private readonly db: DataSource,
+    private readonly paiement: PaiementService,
+  ) {}
 
   /**
    * Réserve des places pour une séance (US5).
@@ -76,6 +83,39 @@ export class ReservationsService {
       }
       throw erreur;
     }
+  }
+
+  /**
+   * Paiement d'une réservation en attente, par carte, Apple Pay ou Google Pay (US4).
+   * Une fois payée, la réservation reçoit un code de billet unique et impossible à deviner.
+   */
+  async payer(id: number, utilisateurId: number, dto: PayerReservationDto) {
+    const [r] = await this.db.query(
+      `SELECT id, statut, montant_total::float AS montant,
+              date_reservation <= ${MAINTENANT_SQL} - interval '${DELAI_PAIEMENT_MINUTES} minutes' AS expiree
+       FROM reservation WHERE id = $1 AND utilisateur_id = $2`,
+      [id, utilisateurId],
+    );
+    if (!r) throw new NotFoundException('Réservation introuvable.');
+    if (r.statut === 'payee') throw new ConflictException('Cette réservation est déjà payée.');
+    if (r.statut === 'annulee') throw new BadRequestException('Cette réservation a été annulée.');
+    if (r.expiree) {
+      throw new GoneException(
+        `Le délai de paiement de ${DELAI_PAIEMENT_MINUTES} minutes est dépassé : les places ont été libérées.`,
+      );
+    }
+
+    const { reference } = await this.paiement.payer(r.montant, dto.moyen, dto.jetonPaiement);
+    const codeBillet = `LGC-${randomBytes(12).toString('base64url')}`;
+    // Pour un UPDATE … RETURNING, TypeORM renvoie [lignes, nombre de lignes modifiées]
+    const [[payee]] = await this.db.query(
+      `UPDATE reservation SET statut = 'payee', reference_paiement = $2, code_billet = $3
+       WHERE id = $1 AND statut = 'en_attente'
+       RETURNING id, statut, montant_total::float AS "montantTotal", code_billet AS "codeBillet"`,
+      [id, reference, codeBillet],
+    );
+    if (!payee) throw new ConflictException('Cette réservation a changé pendant le paiement.');
+    return payee;
   }
 
   /** Les réservations non payées dans le délai libèrent leurs places (suppression en cascade). */

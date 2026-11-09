@@ -14,7 +14,7 @@ describe('ReservationsService (US5 – garantir une place unique)', () => {
   beforeEach(() => {
     tx = { query: jest.fn() };
     const db = { transaction: (fn: (t: typeof tx) => unknown) => fn(tx) };
-    service = new ReservationsService(db as never);
+    service = new ReservationsService(db as never, { payer: jest.fn() } as never);
   });
 
   it('crée une réservation en attente et calcule le montant', async () => {
