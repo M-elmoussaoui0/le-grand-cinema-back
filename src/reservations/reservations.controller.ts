@@ -1,4 +1,14 @@
-import { Body, Controller, HttpCode, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -23,6 +33,27 @@ import { ReservationsService } from './reservations.service';
 @Controller('reservations')
 export class ReservationsController {
   constructor(private readonly reservations: ReservationsService) {}
+
+  @Get('moi')
+  @ApiOperation({
+    summary: 'Mes réservations',
+    description: 'Historique du client connecté, avec le code du billet.',
+  })
+  mesReservations(@UtilisateurCourant() u: UtilisateurJwt) {
+    return this.reservations.mesReservations(u.id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Annuler une réservation',
+    description: 'Possible jusqu’à 1 heure avant la séance.',
+  })
+  @ApiOkResponse({ description: 'Réservation annulée, places libérées.' })
+  @ApiBadRequestResponse({ description: 'Moins d’une heure avant la séance.' })
+  @ApiConflictResponse({ description: 'Réservation déjà annulée.' })
+  annuler(@UtilisateurCourant() u: UtilisateurJwt, @Param('id', ParseIntPipe) id: number) {
+    return this.reservations.annuler(id, u.id);
+  }
 
   @Post()
   @ApiOperation({

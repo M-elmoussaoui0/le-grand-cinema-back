@@ -13,6 +13,9 @@ import { PaiementService } from '../paiement/paiement.service';
 import { CreerReservationDto } from './dto/creer-reservation.dto';
 import { PayerReservationDto } from './dto/payer-reservation.dto';
 
+/** Délai minimum avant la séance pour annuler une réservation. */
+export const DELAI_ANNULATION_HEURES = 1;
+
 /** Code PostgreSQL d'une violation de contrainte d'unicité. */
 const VIOLATION_UNICITE = '23505';
 
@@ -116,6 +119,65 @@ export class ReservationsService {
     );
     if (!payee) throw new ConflictException('Cette réservation a changé pendant le paiement.');
     return payee;
+  }
+
+  /** Historique des réservations du client connecté, la plus récente séance en premier (US13). */
+  mesReservations(utilisateurId: number) {
+    return this.db.query(
+      `SELECT r.id, r.statut, r.montant_total::float AS "montantTotal",
+              CASE WHEN r.statut = 'payee' THEN r.code_billet END AS "codeBillet",
+              se.id AS "seanceId", se.debut, se.langue, f.titre AS film, sa.nom AS salle,
+              COALESCE(ARRAY_AGG(p.rangee || p.numero ORDER BY p.rangee, p.numero)
+                       FILTER (WHERE p.id IS NOT NULL), '{}') AS places,
+              (r.statut <> 'annulee' AND se.debut > ${MAINTENANT_SQL} + interval '${DELAI_ANNULATION_HEURES} hours') AS annulable
+       FROM reservation r
+       JOIN seance se ON se.id = r.seance_id
+       JOIN film f ON f.id = se.film_id
+       JOIN salle sa ON sa.id = se.salle_id
+       LEFT JOIN reservation_place rp ON rp.reservation_id = r.id
+       LEFT JOIN place p ON p.id = rp.place_id
+       WHERE r.utilisateur_id = $1
+         AND NOT (r.statut = 'en_attente'
+                  AND r.date_reservation <= ${MAINTENANT_SQL} - interval '${DELAI_PAIEMENT_MINUTES} minutes')
+       GROUP BY r.id, se.id, f.titre, sa.nom
+       ORDER BY se.debut DESC`,
+      [utilisateurId],
+    );
+  }
+
+  /**
+   * Annulation par le client jusqu'à 1 heure avant la séance (US13).
+   * Les places sont libérées immédiatement ; un paiement déjà fait est remboursé.
+   */
+  async annuler(id: number, utilisateurId: number) {
+    return this.db.transaction(async (tx) => {
+      const [r] = await tx.query(
+        `SELECT r.id, r.statut, se.debut <= ${MAINTENANT_SQL} + interval '${DELAI_ANNULATION_HEURES} hours' AS trop_tard
+         FROM reservation r JOIN seance se ON se.id = r.seance_id
+         WHERE r.id = $1 AND r.utilisateur_id = $2
+         FOR UPDATE OF r`,
+        [id, utilisateurId],
+      );
+      if (!r) throw new NotFoundException('Réservation introuvable.');
+      if (r.statut === 'annulee')
+        throw new ConflictException('Cette réservation est déjà annulée.');
+      if (r.trop_tard) {
+        throw new BadRequestException(
+          `L'annulation est possible jusqu'à ${DELAI_ANNULATION_HEURES} heure avant la séance.`,
+        );
+      }
+      await tx.query('DELETE FROM reservation_place WHERE reservation_id = $1', [id]);
+      await tx.query("UPDATE reservation SET statut = 'annulee' WHERE id = $1", [id]);
+      return {
+        id,
+        statut: 'annulee',
+        rembourse: r.statut === 'payee',
+        message:
+          r.statut === 'payee'
+            ? 'Réservation annulée, vous allez être remboursé.'
+            : 'Réservation annulée.',
+      };
+    });
   }
 
   /** Les réservations non payées dans le délai libèrent leurs places (suppression en cascade). */
