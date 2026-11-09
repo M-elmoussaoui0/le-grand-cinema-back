@@ -43,7 +43,7 @@ SELECT f.id, s.id, x.debut, x.debut + make_interval(mins => f.duree_minutes + 15
 FROM generate_series(0, 59) AS d
 CROSS JOIN salle s
 CROSS JOIN (VALUES (1, TIME '14:00'), (2, TIME '17:15'), (3, TIME '20:30')) AS c(slot, heure)
-CROSS JOIN LATERAL (SELECT CURRENT_DATE + d + c.heure AS debut) x
+CROSS JOIN LATERAL (SELECT (now() AT TIME ZONE 'Europe/Paris')::date + d + c.heure AS debut) x
 JOIN film f ON f.id = ((d + s.id + c.slot) % 6) + 1;
 
 DO $$
@@ -58,7 +58,7 @@ BEGIN
   FOR sc IN
     SELECT se.id, se.salle_id, sa.capacite, se.quota_guichet, se.prix
     FROM seance se JOIN salle sa ON sa.id = se.salle_id
-    WHERE se.debut::date = CURRENT_DATE + 1
+    WHERE se.debut::date = (now() AT TIME ZONE 'Europe/Paris')::date + 1
   LOOP
     taux := 20 + ((sc.id * 37) % 76);
     nb := LEAST((sc.capacite * taux) / 100, sc.capacite - sc.quota_guichet);
@@ -82,6 +82,7 @@ export async function seed(dataSource: DataSource): Promise<boolean> {
 }
 
 async function main() {
+  process.env.TZ = 'Europe/Paris';
   const dataSource = new DataSource(buildDataSourceOptions());
   await dataSource.initialize();
   await dataSource.runMigrations();
