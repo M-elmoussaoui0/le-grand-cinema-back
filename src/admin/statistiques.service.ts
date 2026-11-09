@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { MAINTENANT_SQL } from '../common/temps';
+import { aujourdhui, MAINTENANT_SQL } from '../common/temps';
 
 /**
  * Chiffres de vente par séance, calculés en une requête :
@@ -64,6 +64,56 @@ export class StatistiquesService {
       ventesDerniereHeure: l.derniere_heure,
       recettes: l.recettes,
       misAJourA: new Date(),
+    };
+  }
+
+  /** Taux de remplissage des séances d'un jour, avec le total du jour et le détail par film (US11). */
+  async remplissage(jour = aujourdhui()) {
+    const lignes: LigneStats[] = await this.db.query(
+      `${STATS_SEANCE_SQL}
+       WHERE se.debut >= $1::date AND se.debut < $1::date + 1
+       GROUP BY se.id, f.titre, sa.nom, sa.capacite
+       ORDER BY se.debut, se.salle_id`,
+      [jour],
+    );
+    const seances = lignes.map((l) => ({
+      seanceId: l.seance_id,
+      film: l.film,
+      salle: l.salle,
+      debut: l.debut,
+      capacite: l.capacite,
+      vendues: l.en_ligne + l.guichet,
+      tauxRemplissage: taux(l.en_ligne + l.guichet, l.capacite),
+      recettes: l.recettes,
+    }));
+
+    const parFilm = new Map<
+      string,
+      { film: string; vendues: number; capacite: number; recettes: number }
+    >();
+    for (const s of seances) {
+      const f = parFilm.get(s.film) ?? { film: s.film, vendues: 0, capacite: 0, recettes: 0 };
+      f.vendues += s.vendues;
+      f.capacite += s.capacite;
+      f.recettes += s.recettes;
+      parFilm.set(s.film, f);
+    }
+
+    const vendues = seances.reduce((t, s) => t + s.vendues, 0);
+    const capacite = seances.reduce((t, s) => t + s.capacite, 0);
+    return {
+      jour,
+      resume: {
+        seances: seances.length,
+        placesVendues: vendues,
+        capacite,
+        tauxRemplissage: taux(vendues, capacite),
+        recettes: Math.round(seances.reduce((t, s) => t + s.recettes, 0) * 100) / 100,
+      },
+      parFilm: [...parFilm.values()]
+        .map((f) => ({ ...f, tauxRemplissage: taux(f.vendues, f.capacite) }))
+        .sort((a, b) => b.tauxRemplissage - a.tauxRemplissage),
+      seances,
     };
   }
 }

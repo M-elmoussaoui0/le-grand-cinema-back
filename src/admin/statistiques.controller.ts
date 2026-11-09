@@ -1,13 +1,15 @@
-import { Controller, Get, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { RemplissageDto } from './dto/remplissage.dto';
 import { StatistiquesService } from './statistiques.service';
 
 @ApiTags('Tableau de bord')
@@ -28,5 +30,15 @@ export class StatistiquesController {
   @ApiNotFoundResponse({ description: 'Séance introuvable.' })
   direct(@Param('id', ParseIntPipe) id: number) {
     return this.stats.direct(id);
+  }
+
+  @Get('remplissage')
+  @ApiOperation({
+    summary: 'Taux de remplissage du jour',
+    description: 'Résumé du jour, classement des films et détail de chaque séance.',
+  })
+  @ApiQuery({ name: 'date', required: false, example: '2026-12-05' })
+  remplissage(@Query() { date }: RemplissageDto) {
+    return this.stats.remplissage(date);
   }
 }
