@@ -72,3 +72,49 @@ Documentation interactive de l'API : http://localhost:3000/api/docs
 | `npm test` | Lance les tests unitaires |
 | `npm run test:e2e` | Lance les tests d'intégration sur une vraie base PostgreSQL |
 | `npm run seed` | Applique les migrations et insère les données de démonstration |
+| `npm run charge` | Test de charge : 200 utilisateurs simultanés sur la programmation et le plan de salle |
+
+## User Stories développées
+
+Chaque User Story a été développée sur sa propre branche `feature/`, puis fusionnée dans `develop`.
+
+| User Story | Branche | Routes de l'API |
+|---|---|---|
+| US1 Voir les séances sans compte | `feature/US1-voir-seances` | `GET /api/films`, `GET /api/seances`, `GET /api/seances/:id` |
+| US2 Voir les places restantes | `feature/US2-places-restantes` | `placesRestantes` dans chaque séance |
+| US3 Choisir sa place sur un plan | `feature/US3-plan-salle` | `GET /api/seances/:id/plan` |
+| US4 Réserver et payer sur mobile | `feature/US4-paiement-mobile` | `POST /api/reservations/:id/paiement` |
+| US5 Garantir une place unique | `feature/US5-place-unique` | `POST /api/reservations` |
+| US6 Recevoir un billet QR code | `feature/US6-billet-qr-code` | `GET /api/reservations/:id/billet` |
+| US7 Scanner un billet à l'entrée | `feature/US7-scanner-billet` | `POST /api/billets/scan` |
+| US8 Créer une séance | `feature/US8-creer-seance` | `POST /api/admin/seances`, `DELETE /api/admin/seances/:id` |
+| US9 Réserver un quota au guichet | `feature/US9-quota-guichet` | `PATCH /api/admin/seances/:id/quota`, `POST /api/admin/guichet/ventes` |
+| US10 Suivre une séance en direct | `feature/US10-suivi-direct` | `GET /api/admin/seances/:id/direct` |
+| US11 Voir le taux de remplissage | `feature/US11-taux-remplissage` | `GET /api/admin/remplissage` |
+| US12 Être alerté en cas de pic | `feature/US12-alerte-pic` | `GET /api/admin/alertes` |
+| US13 Retrouver ses réservations | `feature/US13-mes-reservations` | `GET /api/reservations/moi`, `DELETE /api/reservations/:id` |
+| US14 Réserver en anglais | (front end) | – |
+| US15 Tenir la charge du festival | `feature/US15-tenir-la-charge` | cache, compression, index, test de charge |
+| US16 Protéger les données | `feature/US16-protection-donnees` | `POST /api/auth/inscription`, `POST /api/auth/connexion`, `GET` et `DELETE /api/auth/moi` |
+
+## Organisation du code
+
+```
+src/
+├── auth/            US16 : inscription, connexion JWT, rôles, suppression du compte
+├── catalogue/       US1 à US3 : films, séances, places restantes, plan de salle
+├── reservations/    US4, US5, US13 : réservation, paiement, historique, annulation
+├── paiement/        prestataire de paiement (mode test, sur le modèle de Stripe)
+├── billets/         US6, US7 : billet QR code, contrôle à l'entrée
+├── admin/           US8 à US12 : séances, guichet, suivi en direct, remplissage, alertes
+├── common/          gestion des erreurs, fuseau horaire
+├── database/        connexion, migrations, données de démonstration
+└── health/          état de l'API et de la base
+test/                tests d'intégration (API + vraie base PostgreSQL)
+```
+
+Chaque module suit le découpage NestJS : le **contrôleur** reçoit la requête HTTP, le **DTO** valide les données, le **service** contient les règles métier et accède à la base.
+
+## Variables d'environnement
+
+Voir [`.env.example`](.env.example). Aucun secret n'est versionné : le fichier `.env` est ignoré par Git.
