@@ -42,3 +42,33 @@ Format : `type: description` (convention Conventional Commits)
 - `feat: ajout de l'API de réservation`
 - `fix: blocage de la place pendant le paiement`
 - `docs: mise à jour de la convention de branches`
+
+## Stack technique
+
+- **NestJS 10** (TypeScript) : API REST
+- **PostgreSQL 16** avec **TypeORM** (migrations versionnées)
+- **Swagger / OpenAPI** : documentation de l'API sur `/api/docs`
+- **Jest** : tests unitaires et tests d'intégration
+- **GitHub Actions** : intégration continue à chaque Pull Request
+
+## Démarrer le projet en local
+
+```bash
+npm install
+cp .env.example .env      # puis renseigner DATABASE_URL et JWT_SECRET
+npm run build
+npm run seed              # crée les tables et les données de démonstration
+npm start                 # API sur http://localhost:3000/api
+```
+
+Documentation interactive de l'API : http://localhost:3000/api/docs
+
+## Scripts
+
+| Commande | Rôle |
+|---|---|
+| `npm run start:dev` | Démarre l'API en mode développement (rechargement automatique) |
+| `npm run lint` | Vérifie la qualité du code (ESLint) |
+| `npm test` | Lance les tests unitaires |
+| `npm run test:e2e` | Lance les tests d'intégration sur une vraie base PostgreSQL |
+| `npm run seed` | Applique les migrations et insère les données de démonstration |

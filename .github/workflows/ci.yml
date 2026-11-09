@@ -1,0 +1,37 @@
+name: CI
+
+# Lancé à chaque Pull Request et à chaque push sur develop et main
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cinema_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cinema_test
+      DATABASE_SSL: 'false'
+      JWT_SECRET: secret-de-test-ci-uniquement
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: Tests unitaires
+        run: npm test
+      - name: Tests d'intégration (API + base PostgreSQL)
+        run: npm run test:e2e
