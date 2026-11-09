@@ -5,7 +5,9 @@ import { demarrerApp, jeton } from './outils';
 describe('US11 – Voir le taux de remplissage', () => {
   let app: INestApplication;
   let admin: string;
-  const demain = new Date(Date.now() + 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
+  const demain = new Date(Date.now() + 86_400_000).toLocaleDateString('sv-SE', {
+    timeZone: 'Europe/Paris',
+  });
 
   beforeAll(async () => {
     ({ app } = await demarrerApp());

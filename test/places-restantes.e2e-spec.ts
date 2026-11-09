@@ -13,12 +13,22 @@ describe('US2 – Voir les places restantes', () => {
   it("affiche toutes les places d'une séance sans réservation", async () => {
     const res = await request(app.getHttpServer()).get('/api/seances/1').expect(200);
     // Salle 1 : 300 places dont 30 gardées pour le guichet
-    expect(res.body.placesRestantes).toEqual({ enLigne: 270, guichet: 30, total: 300, complet: false });
+    expect(res.body.placesRestantes).toEqual({
+      enLigne: 270,
+      guichet: 30,
+      total: 300,
+      complet: false,
+    });
   });
 
   it('déduit les places réservées et payées', async () => {
-    const demain = new Date(Date.now() + 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
-    const res = await request(app.getHttpServer()).get('/api/seances').query({ date: demain }).expect(200);
+    const demain = new Date(Date.now() + 86_400_000).toLocaleDateString('sv-SE', {
+      timeZone: 'Europe/Paris',
+    });
+    const res = await request(app.getHttpServer())
+      .get('/api/seances')
+      .query({ date: demain })
+      .expect(200);
     const [{ vendues }] = await db.query(
       'SELECT COUNT(*)::int AS vendues FROM reservation_place WHERE seance_id = $1',
       [res.body[0].id],

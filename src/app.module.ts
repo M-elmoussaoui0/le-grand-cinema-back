@@ -1,3 +1,4 @@
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -21,8 +22,10 @@ import { ReservationsModule } from './reservations/reservations.module';
         migrationsRun: true,
       }),
     }),
-    // Limitation globale : 100 requêtes par minute et par adresse IP
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    // Limitation globale : 100 requêtes par minute et par adresse IP (réglable avec THROTTLE_LIMIT)
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: Number(process.env.THROTTLE_LIMIT ?? 100) }]),
+    // Cache en mémoire des lectures publiques les plus demandées (US15)
+    CacheModule.register({ isGlobal: true }),
     HealthModule,
     AuthModule,
     CatalogueModule,

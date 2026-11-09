@@ -19,11 +19,14 @@ export const RESERVATION_ACTIVE_SQL = `(r.statut = 'payee' OR (r.statut = 'en_at
 export const PLACES_SEANCE_SQL = `
   SELECT s.id AS seance_id, p.id AS place_id, p.rangee, p.numero, p.type,
          ROW_NUMBER() OVER (PARTITION BY s.id ORDER BY p.rangee DESC, p.numero DESC) <= s.quota_guichet AS guichet,
-         EXISTS (
-           SELECT 1 FROM reservation_place rp JOIN reservation r ON r.id = rp.reservation_id
-           WHERE rp.seance_id = s.id AND rp.place_id = p.id AND ${RESERVATION_ACTIVE_SQL}
-         ) AS occupee
-  FROM seance s JOIN place p ON p.salle_id = s.salle_id
+         occ.place_id IS NOT NULL AS occupee
+  FROM seance s
+  JOIN place p ON p.salle_id = s.salle_id
+  LEFT JOIN (
+    SELECT rp.seance_id, rp.place_id
+    FROM reservation_place rp JOIN reservation r ON r.id = rp.reservation_id
+    WHERE rp.seance_id = ANY($1) AND ${RESERVATION_ACTIVE_SQL}
+  ) occ ON occ.seance_id = s.id AND occ.place_id = p.id
   WHERE s.id = ANY($1)`;
 
 export type StatutPlace = 'libre' | 'occupee' | 'guichet';
@@ -72,7 +75,12 @@ export class DisponibiliteService {
   }
 
   /** Plan de la salle pour une séance, rangée par rangée (US3). */
-  async plan(seanceId: number): Promise<{ rangee: string; places: PlacePlan[] }[]> {
+  async plan(
+    seanceId: number,
+  ): Promise<{
+    rangees: { rangee: string; places: PlacePlan[] }[];
+    placesRestantes: PlacesRestantes;
+  }> {
     const lignes: {
       place_id: number;
       rangee: string;
@@ -82,11 +90,19 @@ export class DisponibiliteService {
       occupee: boolean;
     }[] = await this.db.query(`${PLACES_SEANCE_SQL} ORDER BY rangee, numero`, [[seanceId]]);
     const rangees = new Map<string, PlacePlan[]>();
+    let enLigne = 0;
+    let guichet = 0;
     for (const l of lignes) {
       const statut: StatutPlace = l.occupee ? 'occupee' : l.guichet ? 'guichet' : 'libre';
+      if (statut === 'libre') enLigne++;
+      if (statut === 'guichet') guichet++;
       if (!rangees.has(l.rangee)) rangees.set(l.rangee, []);
       rangees.get(l.rangee)!.push({ id: l.place_id, numero: l.numero, type: l.type, statut });
     }
-    return [...rangees].map(([rangee, places]) => ({ rangee, places }));
+    // Les places restantes sont déduites du plan : une seule requête pour tout l'écran
+    return {
+      rangees: [...rangees].map(([rangee, places]) => ({ rangee, places })),
+      placesRestantes: { enLigne, guichet, total: enLigne + guichet, complet: enLigne === 0 },
+    };
   }
 }

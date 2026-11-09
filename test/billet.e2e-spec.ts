@@ -49,7 +49,7 @@ describe('US6 – Recevoir un billet QR code', () => {
     });
   });
 
-  it("un autre client ne peut pas voir ce billet (404)", async () => {
+  it('un autre client ne peut pas voir ce billet (404)', async () => {
     const admin = await jeton(app, 'admin@legrandcinema.fr');
     await request(app.getHttpServer())
       .get(`/api/reservations/${reservationId}/billet`)

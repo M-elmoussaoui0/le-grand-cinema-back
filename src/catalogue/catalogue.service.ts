@@ -47,13 +47,9 @@ export class CatalogueService {
 
   /** Plan de la salle avec l'état de chaque place (US3). */
   async plan(seanceId: number) {
-    const seance = await this.seance(seanceId);
-    return {
-      seanceId,
-      salle: seance.salle.nom,
-      placesRestantes: seance.placesRestantes,
-      rangees: await this.disponibilite.plan(seanceId),
-    };
+    const { rangees, placesRestantes } = await this.disponibilite.plan(seanceId);
+    if (rangees.length === 0) throw new NotFoundException('Séance introuvable.');
+    return { seanceId, placesRestantes, rangees };
   }
 
   private async avecPlacesRestantes(seances: Seance[]) {

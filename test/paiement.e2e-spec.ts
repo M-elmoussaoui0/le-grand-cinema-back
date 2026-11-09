@@ -52,7 +52,10 @@ describe('US4 – Réserver et payer sur mobile', () => {
 
   it('délai de 15 minutes dépassé : 410', async () => {
     const id = await reserver(2);
-    await db.query("UPDATE reservation SET date_reservation = date_reservation - interval '16 minutes' WHERE id = $1", [id]);
+    await db.query(
+      "UPDATE reservation SET date_reservation = date_reservation - interval '16 minutes' WHERE id = $1",
+      [id],
+    );
     await request(app.getHttpServer())
       .post(`/api/reservations/${id}/paiement`)
       .set('Authorization', `Bearer ${token}`)

@@ -1,8 +1,9 @@
 import 'reflect-metadata';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { InitialSchema1730000000000 } from './migrations/1730000000000-InitialSchema';
+import { IndexCharge1731000000000 } from './migrations/1731000000000-IndexCharge';
 
-export const MIGRATIONS = [InitialSchema1730000000000];
+export const MIGRATIONS = [InitialSchema1730000000000, IndexCharge1731000000000];
 
 /** Options de connexion lues dans les variables d'environnement (jamais en dur dans le code). */
 export function buildDataSourceOptions(): DataSourceOptions {
@@ -13,6 +14,8 @@ export function buildDataSourceOptions(): DataSourceOptions {
     migrations: MIGRATIONS,
     synchronize: false,
     logging: ['error'],
+    // Pool de connexions : les requêtes simultanées partagent un nombre limité de connexions
+    extra: { max: Number(process.env.DB_POOL_MAX ?? 10) },
   };
 }
 

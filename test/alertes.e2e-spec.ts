@@ -26,6 +26,8 @@ describe('US12 – Être alerté en cas de pic', () => {
       GROUP BY se.id, sa.capacite HAVING COUNT(*) * 100.0 / sa.capacite >= 90`);
     const signalees = res.body.filter((a: { type: string }) => a.type === 'presque_complet');
     expect(attendues.length).toBeGreaterThan(0);
-    expect(signalees.map((a: { seanceId: number }) => a.seanceId).sort()).toEqual(attendues.map((a) => a.id).sort());
+    expect(signalees.map((a: { seanceId: number }) => a.seanceId).sort()).toEqual(
+      attendues.map((a) => a.id).sort(),
+    );
   });
 });

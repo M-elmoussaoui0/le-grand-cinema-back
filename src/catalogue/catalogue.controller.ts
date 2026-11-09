@@ -1,4 +1,5 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Controller, Get, Param, ParseIntPipe, Query, UseInterceptors } from '@nestjs/common';
 import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CatalogueService } from './catalogue.service';
 import { RechercheSeancesDto } from './dto/recherche-seances.dto';
@@ -10,12 +11,16 @@ export class CatalogueController {
   constructor(private readonly catalogue: CatalogueService) {}
 
   @Get('films')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300_000) // 5 minutes : le catalogue change rarement
   @ApiOperation({ summary: 'Liste des films à l’affiche' })
   films() {
     return this.catalogue.listerFilms();
   }
 
   @Get('seances')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(10_000) // 10 secondes : le plan et la réservation restent toujours en temps réel
   @ApiOperation({ summary: 'Séances d’un jour, filtrables par film et par langue' })
   @ApiOkResponse({ description: 'Séances triées par heure de début.' })
   seances(@Query() filtres: RechercheSeancesDto) {
