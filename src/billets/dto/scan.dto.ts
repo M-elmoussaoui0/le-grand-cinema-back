@@ -35,13 +35,18 @@ export class BilletValideDto {
   scanneLe: Date;
 }
 
-export class ErreurDto {
-  @ApiProperty({ example: 409 })
-  statusCode: number;
-
-  @ApiProperty({ example: 'Billet déjà utilisé à 20:12 : entrée refusée.' })
-  message: string;
-
-  @ApiProperty({ example: '2026-12-05T19:14:02.512Z' })
-  timestamp: string;
+/**
+ * Format commun des erreurs (AllExceptionsFilter), avec un exemple réaliste
+ * pour chaque code HTTP dans la documentation Swagger.
+ */
+export function exempleErreur(statusCode: number, message: string) {
+  return {
+    type: 'object',
+    properties: {
+      statusCode: { type: 'number' },
+      message: { type: 'string' },
+      timestamp: { type: 'string', format: 'date-time' },
+    },
+    example: { statusCode, message, timestamp: '2026-12-05T19:14:02.512Z' },
+  };
 }

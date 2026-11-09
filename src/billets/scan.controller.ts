@@ -12,7 +12,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { BilletValideDto, ErreurDto, ScannerBilletDto } from './dto/scan.dto';
+import { BilletValideDto, exempleErreur, ScannerBilletDto } from './dto/scan.dto';
 import { ScanService } from './scan.service';
 
 @ApiTags('Contrôle des billets')
@@ -34,12 +34,24 @@ export class ScanController {
   @ApiOkResponse({ description: 'Billet valide : entrée autorisée.', type: BilletValideDto })
   @ApiBadRequestResponse({
     description: 'Billet annulé, non payé, trop tôt ou séance terminée.',
-    type: ErreurDto,
+    schema: exempleErreur(400, 'Billet pour la séance du 05/12/2026 à 20:30 : trop tôt.'),
   })
-  @ApiNotFoundResponse({ description: 'Billet inconnu.', type: ErreurDto })
-  @ApiConflictResponse({ description: 'Billet déjà utilisé.', type: ErreurDto })
-  @ApiUnauthorizedResponse({ description: 'Connexion requise.', type: ErreurDto })
-  @ApiForbiddenResponse({ description: 'Réservé au personnel du cinéma.', type: ErreurDto })
+  @ApiNotFoundResponse({
+    description: 'Billet inconnu.',
+    schema: exempleErreur(404, 'Billet inconnu : entrée refusée.'),
+  })
+  @ApiConflictResponse({
+    description: 'Billet déjà utilisé.',
+    schema: exempleErreur(409, 'Billet déjà utilisé à 20:12 : entrée refusée.'),
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Connexion requise.',
+    schema: exempleErreur(401, 'Connexion requise.'),
+  })
+  @ApiForbiddenResponse({
+    description: 'Réservé au personnel du cinéma.',
+    schema: exempleErreur(403, 'Accès réservé.'),
+  })
   scanner(@Body() dto: ScannerBilletDto): Promise<BilletValideDto> {
     return this.scan.scanner(dto.code);
   }
