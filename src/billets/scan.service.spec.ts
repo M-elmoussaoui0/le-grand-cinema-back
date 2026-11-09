@@ -9,7 +9,7 @@ describe('ScanService (US7 – scanner un billet à l’entrée)', () => {
   const ligne = {
     statut: 'payee',
     scanne_le: null,
-    debut: new Date('2026-12-05T20:30:00'),
+    debut: new Date('2026-12-05T19:30:00Z'),
     trop_tot: false,
     terminee: false,
   };
@@ -34,7 +34,7 @@ describe('ScanService (US7 – scanner un billet à l’entrée)', () => {
   });
 
   it('refuse un billet déjà utilisé et donne son heure de passage (409)', async () => {
-    refus({ ...ligne, scanne_le: new Date('2026-12-05T20:12:00') });
+    refus({ ...ligne, scanne_le: new Date('2026-12-05T19:12:00Z') });
     const scan = service.scanner('LGC-deja');
     await expect(scan).rejects.toBeInstanceOf(ConflictException);
     await expect(scan).rejects.toThrow('Billet déjà utilisé à 20:12');
