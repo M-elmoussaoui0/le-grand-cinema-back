@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { buildDataSourceOptions } from './database/data-source';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { BilletsModule } from './billets/billets.module';
 import { CatalogueModule } from './catalogue/catalogue.module';
@@ -27,6 +28,7 @@ import { ReservationsModule } from './reservations/reservations.module';
     CatalogueModule,
     ReservationsModule,
     BilletsModule,
+    AdminModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
