@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import compression from 'compression';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
@@ -11,6 +12,10 @@ export function configurerApp(app: INestApplication) {
   // Sécurité : en-têtes HTTP protecteurs et origine du front autorisée uniquement
   app.use(helmet());
   app.enableCors({ origin: (process.env.FRONT_URL ?? 'http://localhost:5173').split(',') });
+
+  // Réponses JSON compressées (gzip) : le plan d'une salle de 300 places pèse 5 fois moins
+  app.use(compression());
+  app.enableShutdownHooks();
 
   app.setGlobalPrefix('api');
 
