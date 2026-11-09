@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { AlertesService } from './alertes.service';
 import { RemplissageDto } from './dto/remplissage.dto';
 import { StatistiquesService } from './statistiques.service';
 
@@ -19,7 +20,10 @@ import { StatistiquesService } from './statistiques.service';
 @Roles('admin')
 @Controller('admin')
 export class StatistiquesController {
-  constructor(private readonly stats: StatistiquesService) {}
+  constructor(
+    private readonly stats: StatistiquesService,
+    private readonly alertesService: AlertesService,
+  ) {}
 
   @Get('seances/:id/direct')
   @ApiOperation({
@@ -40,5 +44,16 @@ export class StatistiquesController {
   @ApiQuery({ name: 'date', required: false, example: '2026-12-05' })
   remplissage(@Query() { date }: RemplissageDto) {
     return this.stats.remplissage(date);
+  }
+
+  @Get('alertes')
+  @ApiOperation({
+    summary: 'Alertes en cas de pic',
+    description:
+      'Séances presque complètes (90 % par défaut), complètes, ou avec un pic de ventes (50 places en une heure par défaut). ' +
+      'Seuils réglables : ALERTE_SEUIL_REMPLISSAGE et ALERTE_PIC_VENTES_HEURE.',
+  })
+  alertes() {
+    return this.alertesService.alertes();
   }
 }
