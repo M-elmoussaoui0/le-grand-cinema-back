@@ -12,6 +12,7 @@ describe('StatistiquesService.remplissage (US11 – voir le taux de remplissage)
     en_ligne: vendues,
     guichet: 0,
     en_attente: 0,
+    entrees: 0,
     derniere_heure: 0,
     recettes: vendues * 10,
   });

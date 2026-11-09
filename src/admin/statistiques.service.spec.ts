@@ -22,6 +22,7 @@ describe('StatistiquesService (US10 – suivre une séance en direct)', () => {
         en_ligne: 200,
         guichet: 25,
         en_attente: 5,
+        entrees: 0,
         derniere_heure: 12,
         recettes: 2362.5,
       },
