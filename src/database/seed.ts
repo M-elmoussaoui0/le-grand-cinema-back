@@ -62,8 +62,10 @@ BEGIN
   LOOP
     taux := 20 + ((sc.id * 37) % 76);
     nb := LEAST((sc.capacite * taux) / 100, sc.capacite - sc.quota_guichet);
-    INSERT INTO reservation (utilisateur_id, seance_id, statut, montant_total, reference_paiement, code_billet)
-    VALUES (client_id, sc.id, 'payee', nb * sc.prix, 'demo', 'LGC-DEMO-' || sc.id)
+    -- Ventes réparties sur les 3 derniers jours : pas de faux « pic de ventes » juste après l'installation
+    INSERT INTO reservation (utilisateur_id, seance_id, statut, montant_total, reference_paiement, code_billet, date_reservation)
+    VALUES (client_id, sc.id, 'payee', nb * sc.prix, 'demo', 'LGC-DEMO-' || sc.id,
+            (now() AT TIME ZONE 'Europe/Paris') - interval '2 hours' - (sc.id % 70) * interval '1 hour')
     RETURNING id INTO res_id;
     INSERT INTO reservation_place (reservation_id, seance_id, place_id)
     SELECT res_id, sc.id, p.id FROM place p

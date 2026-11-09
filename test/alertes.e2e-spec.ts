@@ -31,3 +31,19 @@ describe('US12 – Être alerté en cas de pic', () => {
     );
   });
 });
+
+describe('US12 – données de démonstration', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => ({ app } = await demarrerApp()));
+  afterAll(() => app.close());
+
+  it("aucun faux pic de ventes juste après l'installation", async () => {
+    const admin = await jeton(app, 'admin@legrandcinema.fr');
+    const res = await request(app.getHttpServer())
+      .get('/api/admin/alertes')
+      .set('Authorization', `Bearer ${admin}`)
+      .expect(200);
+    expect(res.body.filter((a: { type: string }) => a.type === 'pic_ventes')).toHaveLength(0);
+  });
+});

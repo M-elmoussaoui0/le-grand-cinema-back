@@ -75,9 +75,7 @@ export class DisponibiliteService {
   }
 
   /** Plan de la salle pour une séance, rangée par rangée (US3). */
-  async plan(
-    seanceId: number,
-  ): Promise<{
+  async plan(seanceId: number): Promise<{
     rangees: { rangee: string; places: PlacePlan[] }[];
     placesRestantes: PlacesRestantes;
   }> {
