@@ -9,7 +9,8 @@ describe('US5 – Garantir une place unique', () => {
   let db: DataSource;
   let seanceId: number;
   let placeLibre: number;
-  const jetonDe = (id: number) => app.get(JwtService).sign({ sub: id, email: `c${id}@test.fr`, role: 'client' });
+  const jetonDe = (id: number) =>
+    app.get(JwtService).sign({ sub: id, email: `c${id}@test.fr`, role: 'client' });
 
   beforeAll(async () => {
     ({ app, db } = await demarrerApp());
@@ -29,11 +30,16 @@ describe('US5 – Garantir une place unique', () => {
   afterAll(() => app.close());
 
   it('exige une connexion (401)', async () => {
-    await request(app.getHttpServer()).post('/api/reservations').send({ seanceId, placeIds: [placeLibre] }).expect(401);
+    await request(app.getHttpServer())
+      .post('/api/reservations')
+      .send({ seanceId, placeIds: [placeLibre] })
+      .expect(401);
   });
 
   it('20 clients réservent la même place au même instant : un seul réussit', async () => {
-    const ids: { id: number }[] = await db.query("SELECT id FROM utilisateur WHERE email LIKE 'concurrent%'");
+    const ids: { id: number }[] = await db.query(
+      "SELECT id FROM utilisateur WHERE email LIKE 'concurrent%'",
+    );
     const reponses = await Promise.all(
       ids.map(({ id }) =>
         request(app.getHttpServer())

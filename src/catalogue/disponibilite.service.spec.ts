@@ -28,9 +28,10 @@ describe('DisponibiliteService (US2 et US3)', () => {
       { place_id: 3, rangee: 'B', numero: 1, type: 'standard', guichet: true, occupee: true },
       { place_id: 4, rangee: 'B', numero: 2, type: 'standard', guichet: true, occupee: false },
     ]);
-    const plan = await service.plan(9);
-    expect(plan.map((r) => r.rangee)).toEqual(['A', 'B']);
-    expect(plan[0].places.map((p) => p.statut)).toEqual(['libre', 'occupee']);
-    expect(plan[1].places.map((p) => p.statut)).toEqual(['occupee', 'guichet']);
+    const { rangees, placesRestantes } = await service.plan(9);
+    expect(rangees.map((r) => r.rangee)).toEqual(['A', 'B']);
+    expect(rangees[0].places.map((p) => p.statut)).toEqual(['libre', 'occupee']);
+    expect(rangees[1].places.map((p) => p.statut)).toEqual(['occupee', 'guichet']);
+    expect(placesRestantes).toEqual({ enLigne: 1, guichet: 1, total: 2, complet: false });
   });
 });

@@ -35,7 +35,12 @@ describe('US13 – Retrouver ses réservations', () => {
       .set('Authorization', `Bearer ${client}`)
       .expect(200);
     expect(res.body).toHaveLength(1);
-    expect(res.body[0]).toMatchObject({ id: reservationId, statut: 'payee', places: ['A1'], annulable: true });
+    expect(res.body[0]).toMatchObject({
+      id: reservationId,
+      statut: 'payee',
+      places: ['A1'],
+      annulable: true,
+    });
     expect(res.body[0].codeBillet).toMatch(/^LGC-/);
   });
 

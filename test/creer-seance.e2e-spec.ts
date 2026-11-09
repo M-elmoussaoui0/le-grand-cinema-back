@@ -6,7 +6,9 @@ describe('US8 – Créer une séance', () => {
   let app: INestApplication;
   let admin: string;
   // Dans 70 jours : après les séances de démonstration
-  const jour = new Date(Date.now() + 70 * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
+  const jour = new Date(Date.now() + 70 * 86_400_000).toLocaleDateString('sv-SE', {
+    timeZone: 'Europe/Paris',
+  });
 
   beforeAll(async () => {
     ({ app } = await demarrerApp());
@@ -30,10 +32,15 @@ describe('US8 – Créer une séance', () => {
       .send({ filmId: 1, salleId: 1, debut: `${jour}T18:00`, prix: 9.5, langue: 'VOST' })
       .expect(201);
     // Film 1 : 118 minutes + 15 minutes de nettoyage = fin à 20:13
-    expect(new Date(res.body.fin).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris' })).toBe('20:13:00');
+    expect(new Date(res.body.fin).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris' })).toBe(
+      '20:13:00',
+    );
     expect(res.body.quotaGuichet).toBe(30);
 
-    const programme = await request(app.getHttpServer()).get('/api/seances').query({ date: jour }).expect(200);
+    const programme = await request(app.getHttpServer())
+      .get('/api/seances')
+      .query({ date: jour })
+      .expect(200);
     expect(programme.body).toHaveLength(1);
   });
 
