@@ -1,0 +1,64 @@
+import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { MAINTENANT_SQL } from '../common/temps';
+
+/** Durée pendant laquelle une place reste bloquée en attendant le paiement. */
+export const DELAI_PAIEMENT_MINUTES = 15;
+
+/**
+ * Une place est occupée si elle appartient à une réservation payée,
+ * ou à une réservation en attente de paiement depuis moins de 15 minutes.
+ */
+export const RESERVATION_ACTIVE_SQL = `(r.statut = 'payee' OR (r.statut = 'en_attente'
+  AND r.date_reservation > ${MAINTENANT_SQL} - interval '${DELAI_PAIEMENT_MINUTES} minutes'))`;
+
+/**
+ * Les places du guichet (US9) sont les dernières places de la salle (dernières rangées) :
+ * elles ne sont pas vendues en ligne.
+ */
+export const PLACES_SEANCE_SQL = `
+  SELECT s.id AS seance_id, p.id AS place_id, p.rangee, p.numero, p.type,
+         ROW_NUMBER() OVER (PARTITION BY s.id ORDER BY p.rangee DESC, p.numero DESC) <= s.quota_guichet AS guichet,
+         EXISTS (
+           SELECT 1 FROM reservation_place rp JOIN reservation r ON r.id = rp.reservation_id
+           WHERE rp.seance_id = s.id AND rp.place_id = p.id AND ${RESERVATION_ACTIVE_SQL}
+         ) AS occupee
+  FROM seance s JOIN place p ON p.salle_id = s.salle_id
+  WHERE s.id = ANY($1)`;
+
+export interface PlacesRestantes {
+  /** Places encore réservables en ligne */
+  enLigne: number;
+  /** Places encore disponibles au guichet */
+  guichet: number;
+  total: number;
+  complet: boolean;
+}
+
+@Injectable()
+export class DisponibiliteService {
+  constructor(private readonly db: DataSource) {}
+
+  /** Places restantes de plusieurs séances, calculées en une seule requête (US2). */
+  async placesRestantes(seanceIds: number[]): Promise<Map<number, PlacesRestantes>> {
+    const resultat = new Map<number, PlacesRestantes>();
+    if (seanceIds.length === 0) return resultat;
+    const lignes: { seance_id: number; en_ligne: number; guichet: number }[] = await this.db.query(
+      `SELECT seance_id,
+              COUNT(*) FILTER (WHERE NOT occupee AND NOT guichet)::int AS en_ligne,
+              COUNT(*) FILTER (WHERE NOT occupee AND guichet)::int AS guichet
+       FROM (${PLACES_SEANCE_SQL}) places
+       GROUP BY seance_id`,
+      [seanceIds],
+    );
+    for (const l of lignes) {
+      resultat.set(l.seance_id, {
+        enLigne: l.en_ligne,
+        guichet: l.guichet,
+        total: l.en_ligne + l.guichet,
+        complet: l.en_ligne === 0,
+      });
+    }
+    return resultat;
+  }
+}
