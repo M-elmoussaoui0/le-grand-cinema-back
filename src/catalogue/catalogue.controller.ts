@@ -28,4 +28,15 @@ export class CatalogueController {
   seance(@Param('id', ParseIntPipe) id: number) {
     return this.catalogue.seance(id);
   }
+
+  @Get('seances/:id/plan')
+  @ApiOperation({
+    summary: 'Plan de la salle pour une séance',
+    description:
+      'Chaque place a un statut : libre, occupee (déjà réservée) ou guichet (gardée pour la vente sur place).',
+  })
+  @ApiNotFoundResponse({ description: 'Séance introuvable.' })
+  plan(@Param('id', ParseIntPipe) id: number) {
+    return this.catalogue.plan(id);
+  }
 }

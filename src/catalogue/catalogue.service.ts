@@ -45,6 +45,17 @@ export class CatalogueService {
     return resultat;
   }
 
+  /** Plan de la salle avec l'état de chaque place (US3). */
+  async plan(seanceId: number) {
+    const seance = await this.seance(seanceId);
+    return {
+      seanceId,
+      salle: seance.salle.nom,
+      placesRestantes: seance.placesRestantes,
+      rangees: await this.disponibilite.plan(seanceId),
+    };
+  }
+
   private async avecPlacesRestantes(seances: Seance[]) {
     const places = await this.disponibilite.placesRestantes(seances.map((s) => s.id));
     return seances.map((s) => ({ ...s, placesRestantes: places.get(s.id) }));

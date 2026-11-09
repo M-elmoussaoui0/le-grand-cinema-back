@@ -26,6 +26,15 @@ export const PLACES_SEANCE_SQL = `
   FROM seance s JOIN place p ON p.salle_id = s.salle_id
   WHERE s.id = ANY($1)`;
 
+export type StatutPlace = 'libre' | 'occupee' | 'guichet';
+
+export interface PlacePlan {
+  id: number;
+  numero: number;
+  type: 'standard' | 'pmr' | 'vip';
+  statut: StatutPlace;
+}
+
 export interface PlacesRestantes {
   /** Places encore réservables en ligne */
   enLigne: number;
@@ -60,5 +69,24 @@ export class DisponibiliteService {
       });
     }
     return resultat;
+  }
+
+  /** Plan de la salle pour une séance, rangée par rangée (US3). */
+  async plan(seanceId: number): Promise<{ rangee: string; places: PlacePlan[] }[]> {
+    const lignes: {
+      place_id: number;
+      rangee: string;
+      numero: number;
+      type: PlacePlan['type'];
+      guichet: boolean;
+      occupee: boolean;
+    }[] = await this.db.query(`${PLACES_SEANCE_SQL} ORDER BY rangee, numero`, [[seanceId]]);
+    const rangees = new Map<string, PlacePlan[]>();
+    for (const l of lignes) {
+      const statut: StatutPlace = l.occupee ? 'occupee' : l.guichet ? 'guichet' : 'libre';
+      if (!rangees.has(l.rangee)) rangees.set(l.rangee, []);
+      rangees.get(l.rangee)!.push({ id: l.place_id, numero: l.numero, type: l.type, statut });
+    }
+    return [...rangees].map(([rangee, places]) => ({ rangee, places }));
   }
 }
