@@ -6,6 +6,7 @@ describe('CatalogueService (US1 – voir les séances sans compte)', () => {
   let qb: Record<string, jest.Mock>;
   let seances: Record<string, jest.Mock>;
   let service: CatalogueService;
+  let disponibilite: { placesRestantes: jest.Mock };
 
   beforeEach(() => {
     qb = {
@@ -17,7 +18,12 @@ describe('CatalogueService (US1 – voir les séances sans compte)', () => {
       getMany: jest.fn().mockResolvedValue([]),
     };
     seances = { createQueryBuilder: jest.fn(() => qb), findOne: jest.fn() };
-    service = new CatalogueService({ find: jest.fn() } as never, seances as never);
+    disponibilite = { placesRestantes: jest.fn().mockResolvedValue(new Map()) };
+    service = new CatalogueService(
+      { find: jest.fn() } as never,
+      seances as never,
+      disponibilite as never,
+    );
   });
 
   it("cherche les séances du jour quand aucune date n'est donnée", async () => {
@@ -36,5 +42,15 @@ describe('CatalogueService (US1 – voir les séances sans compte)', () => {
   it('renvoie une erreur 404 pour une séance inexistante', async () => {
     seances.findOne.mockResolvedValue(null);
     await expect(service.seance(999)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('ajoute les places restantes à chaque séance (US2)', async () => {
+    qb.getMany.mockResolvedValue([{ id: 4 }, { id: 5 }]);
+    disponibilite.placesRestantes.mockResolvedValue(
+      new Map([[4, { enLigne: 0, guichet: 3, total: 3, complet: true }]]),
+    );
+    const res = await service.rechercherSeances({});
+    expect(disponibilite.placesRestantes).toHaveBeenCalledWith([4, 5]);
+    expect(res[0].placesRestantes).toMatchObject({ enLigne: 0, complet: true });
   });
 });

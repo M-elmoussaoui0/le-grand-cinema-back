@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { aujourdhui } from '../common/temps';
+import { DisponibiliteService } from './disponibilite.service';
 import { RechercheSeancesDto } from './dto/recherche-seances.dto';
 import { Film } from './film.entity';
 import { Seance } from './seance.entity';
@@ -11,14 +12,15 @@ export class CatalogueService {
   constructor(
     @InjectRepository(Film) private readonly films: Repository<Film>,
     @InjectRepository(Seance) private readonly seances: Repository<Seance>,
+    private readonly disponibilite: DisponibiliteService,
   ) {}
 
   listerFilms() {
     return this.films.find({ order: { titre: 'ASC' } });
   }
 
-  /** Séances d'un jour, consultables sans compte (US1). */
-  rechercherSeances(filtres: RechercheSeancesDto) {
+  /** Séances d'un jour, consultables sans compte (US1), avec les places restantes (US2). */
+  async rechercherSeances(filtres: RechercheSeancesDto) {
     const jour = filtres.date ?? aujourdhui();
     const requete = this.seances
       .createQueryBuilder('s')
@@ -29,7 +31,8 @@ export class CatalogueService {
       .addOrderBy('salle.id', 'ASC');
     if (filtres.filmId) requete.andWhere('s.film_id = :filmId', { filmId: filtres.filmId });
     if (filtres.langue) requete.andWhere('s.langue = :langue', { langue: filtres.langue });
-    return requete.getMany();
+    const seances = await requete.getMany();
+    return this.avecPlacesRestantes(seances);
   }
 
   async seance(id: number) {
@@ -38,6 +41,12 @@ export class CatalogueService {
       relations: { film: true, salle: true },
     });
     if (!seance) throw new NotFoundException('Séance introuvable.');
-    return seance;
+    const [resultat] = await this.avecPlacesRestantes([seance]);
+    return resultat;
+  }
+
+  private async avecPlacesRestantes(seances: Seance[]) {
+    const places = await this.disponibilite.placesRestantes(seances.map((s) => s.id));
+    return seances.map((s) => ({ ...s, placesRestantes: places.get(s.id) }));
   }
 }
