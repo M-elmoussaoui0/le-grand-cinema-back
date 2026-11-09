@@ -10,7 +10,8 @@ import { seed } from '../src/database/seed';
 export async function demarrerApp(): Promise<{ app: INestApplication; db: DataSource }> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = configurerApp(moduleRef.createNestApplication());
-  await app.init();
+  // Serveur réellement à l’écoute : nécessaire pour les requêtes simultanées
+  await app.listen(0);
   const db = app.get(DataSource);
   await db.query(
     'TRUNCATE reservation_place, reservation, seance, place, salle, film, utilisateur RESTART IDENTITY CASCADE',
