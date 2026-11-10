@@ -65,7 +65,8 @@ describe("US7 – Scanner un billet à l'entrée", () => {
   afterAll(() => app.close());
 
   it('un client ne peut pas scanner de billet (403)', async () => {
-    await scanner(code, client).expect(403);
+    const res = await scanner(code, client).expect(403);
+    expect(res.body.message).toBe('Accès réservé.');
   });
 
   it('accepte le billet une première fois et donne les places', async () => {
@@ -92,7 +93,8 @@ describe("US7 – Scanner un billet à l'entrée", () => {
   });
 
   it('refuse un billet inconnu (404)', async () => {
-    await scanner('LGC-inexistant').expect(404);
+    const res = await scanner('LGC-inexistant').expect(404);
+    expect(res.body.message).toBe('Billet inconnu : entrée refusée.');
   });
 
   it('refuse un billet pour une séance dans plusieurs jours (400)', async () => {
