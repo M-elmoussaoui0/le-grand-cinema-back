@@ -13,6 +13,7 @@ describe('AlertesService (US12 – être alerté en cas de pic)', () => {
     en_ligne: vendues,
     guichet: 0,
     en_attente: 0,
+    entrees: 0,
     derniere_heure: derniereHeure,
     recettes: 0,
   });

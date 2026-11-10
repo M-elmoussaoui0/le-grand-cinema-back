@@ -11,6 +11,7 @@ export const STATS_SEANCE_SQL = `
          COUNT(rp.place_id) FILTER (WHERE r.statut = 'payee' AND r.reference_paiement IS DISTINCT FROM 'guichet')::int AS en_ligne,
          COUNT(rp.place_id) FILTER (WHERE r.statut = 'payee' AND r.reference_paiement = 'guichet')::int AS guichet,
          COUNT(rp.place_id) FILTER (WHERE r.statut = 'en_attente')::int AS en_attente,
+         COUNT(rp.place_id) FILTER (WHERE r.statut = 'payee' AND r.scanne_le IS NOT NULL)::int AS entrees,
          COUNT(rp.place_id) FILTER (WHERE r.statut = 'payee'
                                      AND r.date_reservation > ${MAINTENANT_SQL} - interval '1 hour')::int AS derniere_heure,
          COALESCE(SUM(se.prix) FILTER (WHERE r.statut = 'payee'), 0)::float AS recettes
@@ -30,6 +31,8 @@ export interface LigneStats {
   en_ligne: number;
   guichet: number;
   en_attente: number;
+  /** Places dont le billet a été scanné à l'entrée (US7) */
+  entrees: number;
   derniere_heure: number;
   recettes: number;
 }
@@ -59,6 +62,7 @@ export class StatistiquesService {
       capacite: l.capacite,
       vendues: { enLigne: l.en_ligne, guichet: l.guichet, total: vendues },
       enAttentePaiement: l.en_attente,
+      entrees: l.entrees,
       restantes: l.capacite - vendues - l.en_attente,
       tauxRemplissage: taux(vendues, l.capacite),
       ventesDerniereHeure: l.derniere_heure,
