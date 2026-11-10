@@ -1,0 +1,80 @@
+{
+  "name": "le-grand-cinema-back",
+  "version": "1.0.0",
+  "description": "API REST de réservation de places – Le Grand Cinéma",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "seed": "node dist/database/seed.js",
+    "seed:dev": "ts-node src/database/seed.ts",
+    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "test:e2e": "jest --config test/jest-e2e.json --runInBand",
+    "charge": "node charge/festival.js"
+  },
+  "dependencies": {
+    "@nestjs/cache-manager": "2.3.0",
+    "@nestjs/common": "10.4.22",
+    "@nestjs/config": "3.3.0",
+    "@nestjs/core": "10.4.22",
+    "@nestjs/jwt": "10.2.0",
+    "@nestjs/platform-express": "10.4.22",
+    "@nestjs/swagger": "7.4.2",
+    "@nestjs/throttler": "6.4.0",
+    "@nestjs/typeorm": "10.0.2",
+    "bcryptjs": "2.4.3",
+    "cache-manager": "5.7.6",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.14.1",
+    "compression": "1.7.5",
+    "helmet": "7.2.0",
+    "pg": "8.13.1",
+    "qrcode": "1.5.4",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.1",
+    "typeorm": "0.3.20"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.17.0",
+    "@nestjs/testing": "10.4.22",
+    "@types/bcryptjs": "2.4.6",
+    "@types/compression": "1.7.5",
+    "@types/express": "5.0.0",
+    "@types/jest": "29.5.14",
+    "@types/node": "22.10.2",
+    "@types/qrcode": "1.5.5",
+    "@types/supertest": "6.0.2",
+    "autocannon": "8.0.0",
+    "eslint": "9.17.0",
+    "jest": "29.7.0",
+    "prettier": "3.4.2",
+    "supertest": "7.0.0",
+    "ts-jest": "29.2.5",
+    "ts-node": "10.9.2",
+    "ts-node-dev": "2.0.0",
+    "typescript": "5.6.3",
+    "typescript-eslint": "8.18.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.service.ts"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
