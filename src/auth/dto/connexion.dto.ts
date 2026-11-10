@@ -6,7 +6,7 @@ export class ConnexionDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'Demo2026!' })
+  @ApiProperty({ example: 'Studi2026' })
   @IsNotEmpty()
   motDePasse: string;
 }

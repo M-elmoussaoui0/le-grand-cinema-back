@@ -4,7 +4,7 @@ import { buildDataSourceOptions } from './data-source';
 
 /**
  * Jeu de données de démonstration :
- * - 2 comptes (administrateur et client), mot de passe « Demo2026! » haché en bcrypt ;
+ * - 2 comptes (administrateur et client), mot de passe « Studi2026 » haché en bcrypt ;
  * - 6 films, 10 salles modulables, 1 700 places ;
  * - 3 séances par jour et par salle pendant 60 jours à partir d'aujourd'hui ;
  * - des réservations sur les séances de demain, pour alimenter le tableau de bord.
@@ -14,9 +14,9 @@ export const SEED_SQL = `
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 INSERT INTO utilisateur (nom, prenom, email, mot_de_passe_hash, role) VALUES
-  ('Admin',  'Cinéma', 'admin@legrandcinema.fr', crypt('Demo2026!', gen_salt('bf', 10)), 'admin'),
-  ('Martin', 'Léa',    'client@legrandcinema.fr', crypt('Demo2026!', gen_salt('bf', 10)), 'client'),
-  ('Démo',   'Festival', 'festival@legrandcinema.fr', crypt('Demo2026!', gen_salt('bf', 10)), 'client');
+  ('Admin',  'Cinéma', 'admin@legrandcinema.fr', crypt('Studi2026', gen_salt('bf', 10)), 'admin'),
+  ('Martin', 'Léa',    'client@legrandcinema.fr', crypt('Studi2026', gen_salt('bf', 10)), 'client'),
+  ('Démo',   'Festival', 'festival@legrandcinema.fr', crypt('Studi2026', gen_salt('bf', 10)), 'client');
 
 INSERT INTO film (titre, synopsis, duree_minutes, genre, classification) VALUES
   ('Le Dernier Accord', 'Un pianiste de jazz prépare le concert de sa vie, la veille du festival.', 118, 'Drame', 'Tous publics'),

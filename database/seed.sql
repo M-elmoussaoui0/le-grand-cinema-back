@@ -7,8 +7,8 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 INSERT INTO utilisateur (nom, prenom, email, mot_de_passe_hash, role) VALUES
-    ('Admin',  'Cinéma', 'admin@legrandcinema.fr', crypt('Demo2026!', gen_salt('bf', 10)), 'admin'),
-    ('Martin', 'Léa',    'lea.martin@exemple.fr',  crypt('Demo2026!', gen_salt('bf', 10)), 'client');
+    ('Admin',  'Cinéma', 'admin@legrandcinema.fr', crypt('Studi2026', gen_salt('bf', 10)), 'admin'),
+    ('Martin', 'Léa',    'lea.martin@exemple.fr',  crypt('Studi2026', gen_salt('bf', 10)), 'client');
 
 INSERT INTO film (titre, synopsis, duree_minutes, genre, classification) VALUES
     ('Le Dernier Accord', 'Un pianiste de jazz prépare le concert de sa vie.', 118, 'Drame', 'Tous publics'),
