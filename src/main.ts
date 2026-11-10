@@ -14,4 +14,8 @@ async function bootstrap() {
   Logger.log(`API démarrée sur le port ${port} – documentation : /api/docs`, 'Bootstrap');
 }
 
-bootstrap();
+// Une erreur au démarrage (base injoignable, port occupé…) est journalisée et arrête le processus
+bootstrap().catch((erreur: unknown) => {
+  Logger.error(`Démarrage impossible : ${String(erreur)}`, 'Bootstrap');
+  process.exit(1);
+});
