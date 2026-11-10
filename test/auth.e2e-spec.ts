@@ -39,6 +39,18 @@ describe('US16 – Protéger les données (API + PostgreSQL)', () => {
     );
   });
 
+  it('refuse un mot de passe très long, sans ralentir le serveur (400)', async () => {
+    const debut = Date.now();
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/inscription')
+      .send({ nom: 'A', prenom: 'B', email: 'long@exemple.fr', motDePasse: 'a'.repeat(50000) })
+      .expect(400);
+    expect(res.body.message).toEqual(
+      expect.arrayContaining(['Le mot de passe doit contenir au plus 72 caractères.']),
+    );
+    expect(Date.now() - debut).toBeLessThan(500);
+  });
+
   it('refuse un champ inconnu envoyé par le client, par exemple un rôle admin (400)', async () => {
     await request(app.getHttpServer())
       .post('/api/auth/inscription')

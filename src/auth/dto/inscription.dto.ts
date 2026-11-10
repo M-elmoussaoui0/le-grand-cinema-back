@@ -21,7 +21,10 @@ export class InscriptionDto {
     description: '8 caractères minimum, une majuscule, une minuscule et un chiffre',
   })
   @MinLength(8, { message: 'Le mot de passe doit contenir au moins 8 caractères.' })
-  @Matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+  // bcrypt n'utilise que les 72 premiers octets : inutile d'accepter plus
+  @MaxLength(72, { message: 'Le mot de passe doit contenir au plus 72 caractères.' })
+  // Classes négatives ([^a-z]*…) : vérification en temps linéaire, sans retour arrière
+  @Matches(/^(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])(?=\D*\d)/, {
     message: 'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre.',
   })
   motDePasse: string;
