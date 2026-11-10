@@ -93,32 +93,37 @@ export class ReservationsService {
    * Une fois payée, la réservation reçoit un code de billet unique et impossible à deviner.
    */
   async payer(id: number, utilisateurId: number, dto: PayerReservationDto) {
-    const [r] = await this.db.query(
-      `SELECT id, statut, montant_total::float AS montant,
-              date_reservation <= ${MAINTENANT_SQL} - interval '${DELAI_PAIEMENT_MINUTES} minutes' AS expiree
-       FROM reservation WHERE id = $1 AND utilisateur_id = $2`,
-      [id, utilisateurId],
-    );
-    if (!r) throw new NotFoundException('Réservation introuvable.');
-    if (r.statut === 'payee') throw new ConflictException('Cette réservation est déjà payée.');
-    if (r.statut === 'annulee') throw new BadRequestException('Cette réservation a été annulée.');
-    if (r.expiree) {
-      throw new GoneException(
-        `Le délai de paiement de ${DELAI_PAIEMENT_MINUTES} minutes est dépassé : les places ont été libérées.`,
+    // La ligne est verrouillée (FOR UPDATE) jusqu'à la fin du paiement : un second paiement
+    // de la même réservation (double appui sur « Payer ») attend, puis la trouve déjà payée,
+    // sans jamais appeler la banque. La libération des réservations expirées attend aussi.
+    return this.db.transaction(async (tx) => {
+      const [r] = await tx.query(
+        `SELECT id, statut, montant_total::float AS montant,
+                date_reservation <= ${MAINTENANT_SQL} - interval '${DELAI_PAIEMENT_MINUTES} minutes' AS expiree
+         FROM reservation WHERE id = $1 AND utilisateur_id = $2
+         FOR UPDATE`,
+        [id, utilisateurId],
       );
-    }
+      if (!r) throw new NotFoundException('Réservation introuvable.');
+      if (r.statut === 'payee') throw new ConflictException('Cette réservation est déjà payée.');
+      if (r.statut === 'annulee') throw new BadRequestException('Cette réservation a été annulée.');
+      if (r.expiree) {
+        throw new GoneException(
+          `Le délai de paiement de ${DELAI_PAIEMENT_MINUTES} minutes est dépassé : les places ont été libérées.`,
+        );
+      }
 
-    const { reference } = await this.paiement.payer(r.montant, dto.moyen, dto.jetonPaiement);
-    const codeBillet = `LGC-${randomBytes(12).toString('base64url')}`;
-    // Pour un UPDATE … RETURNING, TypeORM renvoie [lignes, nombre de lignes modifiées]
-    const [[payee]] = await this.db.query(
-      `UPDATE reservation SET statut = 'payee', reference_paiement = $2, code_billet = $3
-       WHERE id = $1 AND statut = 'en_attente'
-       RETURNING id, statut, montant_total::float AS "montantTotal", code_billet AS "codeBillet"`,
-      [id, reference, codeBillet],
-    );
-    if (!payee) throw new ConflictException('Cette réservation a changé pendant le paiement.');
-    return payee;
+      const { reference } = await this.paiement.payer(r.montant, dto.moyen, dto.jetonPaiement);
+      const codeBillet = `LGC-${randomBytes(12).toString('base64url')}`;
+      // Pour un UPDATE … RETURNING, TypeORM renvoie [lignes, nombre de lignes modifiées]
+      const [[payee]] = await tx.query(
+        `UPDATE reservation SET statut = 'payee', reference_paiement = $2, code_billet = $3
+         WHERE id = $1
+         RETURNING id, statut, montant_total::float AS "montantTotal", code_billet AS "codeBillet"`,
+        [id, reference, codeBillet],
+      );
+      return payee;
+    });
   }
 
   /** Historique des réservations du client connecté, la plus récente séance en premier (US13). */

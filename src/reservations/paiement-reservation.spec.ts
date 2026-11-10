@@ -2,7 +2,11 @@ import { ConflictException, GoneException, NotFoundException } from '@nestjs/com
 import { ReservationsService } from './reservations.service';
 
 describe('ReservationsService.payer (US4)', () => {
-  const db = { query: jest.fn() };
+  // La transaction exécute directement le travail demandé avec la même connexion simulée
+  const db: { query: jest.Mock; transaction: jest.Mock } = {
+    query: jest.fn(),
+    transaction: jest.fn((travail: (tx: unknown) => unknown) => travail(db)),
+  };
   const paiement = { payer: jest.fn().mockResolvedValue({ reference: 'pi_test_carte_1' }) };
   const service = new ReservationsService(db as never, paiement as never);
   const dto = { moyen: 'apple_pay' as const, jetonPaiement: 'tok_visa' };
