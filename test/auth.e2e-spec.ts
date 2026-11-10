@@ -55,7 +55,7 @@ describe('US16 – Protéger les données (API + PostgreSQL)', () => {
   it('connecte le compte de démonstration et donne accès au profil', async () => {
     const { body } = await request(app.getHttpServer())
       .post('/api/auth/connexion')
-      .send({ email: 'client@legrandcinema.fr', motDePasse: 'Demo2026!' })
+      .send({ email: 'client@legrandcinema.fr', motDePasse: 'Studi2026' })
       .expect(200);
     const profil = await request(app.getHttpServer())
       .get('/api/auth/moi')

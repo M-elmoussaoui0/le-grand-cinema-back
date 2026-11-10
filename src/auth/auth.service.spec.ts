@@ -71,11 +71,11 @@ describe('AuthService (US16 – protéger les données)', () => {
       prenom: 'Cinéma',
       email: 'admin@legrandcinema.fr',
       role: 'admin',
-      motDePasseHash: await bcrypt.hash('Demo2026!', 4),
+      motDePasseHash: await bcrypt.hash('Studi2026', 4),
     });
     const res = await service.connecter({
       email: 'admin@legrandcinema.fr',
-      motDePasse: 'Demo2026!',
+      motDePasse: 'Studi2026',
     });
     expect(jwt.verify(res.accessToken)).toMatchObject({ sub: 7, role: 'admin' });
   });

@@ -20,7 +20,7 @@ export async function demarrerApp(): Promise<{ app: INestApplication; db: DataSo
   return { app, db };
 }
 
-export async function jeton(app: INestApplication, email: string, motDePasse = 'Demo2026!') {
+export async function jeton(app: INestApplication, email: string, motDePasse = 'Studi2026') {
   const res = await request(app.getHttpServer())
     .post('/api/auth/connexion')
     .send({ email, motDePasse })
